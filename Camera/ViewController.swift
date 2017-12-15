@@ -9,6 +9,8 @@
 import UIKit
 import AVFoundation
 import CoreImage
+import SwiftyJSON
+import Alamofire
 
 class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
 
@@ -128,30 +130,67 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
         let sourceImageColor: CIImage = CIImage(cvPixelBuffer: pixelBuffer)
         
         if (faceLayer1.frame.width != 0 ) {
-            let crop = sourceImageColor.cropping(to: faceLayer1.frame)
-            var image = UIImage.init(ciImage: crop)
-            
-//            var rect = faceLayer1.frame
-////            rect.origin.x*=faceLayer1.frame
-////            rect.origin.y*=faceLayer1.frame
-////            rect.size.width*=faceLayer1.frame
-////            rect.size.height*=faceLayer1.frame
-//
-//            let imageRef = image.cropping(to: rect)
-//            let image1 = UIImage(cgImage: imageRef!, scale: self.scale, orientation: self.imageOrientation)
-            
-//            let  croppedImage = cropImage(imageToCrop: image, toRect: faceLayer1.frame)
+            let context = CIContext(options: nil)
+            let cgImage = context.createCGImage(sourceImageColor, from: sourceImageColor.extent)
+            let uiImage = UIImage.init(cgImage: cgImage!)
             
             
-//            var crop = image.
-//            var imageRef = sourceImageColor.cropping(to: faceLayer1.frame)
-////            var imageRef = sourceImageColor?..cropping(to: faceLayer1.frame) as? CGImageRef
-//            // Create new cropped UIImage
-//            var croppedImage = UIImage.init(ciImage: imageRef)
-//            CGImageRelease(imageRef)
-//            var image = UIImage.init(ciImage: sourceImageColor, scale: 1.0, orientation: .left)
-//            print(croppedImage)
-            self.previewCam.image = image
+            if let imgData = UIImageJPEGRepresentation(uiImage,1) {
+                
+                Alamofire.upload(multipartFormData: {multipartFormData in
+                    multipartFormData.append(imgData, withName: "upload_image",  fileName: "image.jpg", mimeType: "image/jpg")
+                }
+                    , to: "http://192.168.0.38:8088/hang.php")
+                { (result) in
+                    switch result {
+                    case .success(let upload, _, _):
+                        
+                        upload.uploadProgress(closure: { (Progress) in
+                            print("Upload Progress: \(Progress.fractionCompleted)")
+                        })
+                        
+                        upload.responseJSON { response in
+                            
+                            
+                            DispatchQueue.main.async(execute: {
+                                guard let object = response.result.value else {
+                                    let alert = UIAlertController(title: "Alert", message: response.result.error?.localizedDescription, preferredStyle: UIAlertControllerStyle.alert)
+                                    alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+                                    self.present(alert, animated: true, completion: nil)
+                                    
+                                    print(response.result.error!)
+                                    return
+                                }
+                                let json = JSON(object)
+                                
+                                let alert = UIAlertController(title: "", message: json["result"].string, preferredStyle: UIAlertControllerStyle.alert)
+                                alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+                                self.present(alert, animated: true, completion: nil)
+                                
+                                
+                                
+                                let string = json["result"].string
+                                //                            let utterance = AVSpeechUtterance(string: string!)
+                                //                            utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+                                //
+                                //                            let synth = AVSpeechSynthesizer()
+                                //                            synth.speak(utterance)
+                                
+                                print(json)
+                                
+                            })
+                            
+                            
+                        }
+                        
+                    case .failure(let encodingError):
+                        //self.delegate?.showFailAlert()
+                        print(encodingError)
+                    }
+                    
+                }
+                
+            }
         }
         
     }
