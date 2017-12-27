@@ -1,2 +1,4 @@
 github "Alamofire/Alamofire" "4.6.0"
 github "SwiftyJSON/SwiftyJSON" "4.0.0"
+github "gavinbunney/Toucan" "1.0.0"
+github "rs/SDWebImage" "4.2.2"

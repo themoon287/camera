@@ -14,8 +14,12 @@ import Alamofire
 
 class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
 
+    @IBOutlet weak var whisker: UIImageView!
+    @IBOutlet weak var menu: UIView!
+    @IBOutlet weak var leadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var cameraView: UIView!
     @IBOutlet weak var previewCam: UIImageView!
+    @IBOutlet weak var detectButton: UIBarButtonItem!
     
     //create AVCaptureSession
     let captureSession = AVCaptureSession()
@@ -27,20 +31,104 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
     
     var preview : AVCaptureVideoPreviewLayer?
     
+    var faceLayer: CALayer = CALayer()
     var faceLayer1: CALayer = CALayer()
     var faceLayer2: CALayer = CALayer()
     var faceLayer3: CALayer = CALayer()
     var faceLayer4: CALayer = CALayer()
     var faceLayer5: CALayer = CALayer()
     
-    var faceArr : [CALayer]?
+    var textFace1: CATextLayer = CATextLayer()
+    var textFace2: CATextLayer = CATextLayer()
+    var textFace3: CATextLayer = CATextLayer()
+    var textFace4: CATextLayer = CATextLayer()
+    var textFace5: CATextLayer = CATextLayer()
+    
+    var isHasFace1: Bool = false
+    var isHasFace2: Bool = false
+    var isHasFace3: Bool = false
+    var isHasFace4: Bool = false
+    var isHasFace5: Bool = false
+    
+    var whiskerLayer : CALayer?
+    let whiskerImage: UIImage? = UIImage(named: "whisker")
+    
+    
+    var ciiImage = CIImage()
+    var cgImage :CGImage?
     
     var faceID : Int = 0
     
     let dispatchQueue = DispatchQueue(label: "Dispatch Queue")
     
+    var menuShowing = false
+    var whiskerShowing = false
+    var isDetect = false
+    
+    var account: AccountModel = AccountModel()
+    
+    @IBAction func Detect(_ sender: Any) {
+        isDetect = !isDetect
+        if (isDetect && faceLayer1.frame != CGRect() ) {
+            detectButton.title = "Loading..."
+            let frame1 = faceLayer1.frame
+
+            let new = CGRect(x: (frame1.origin.x+frame1.width/2)*2.25+frame1.width*0.25, y: (frame1.origin.y+frame1.height/2)*2.25+frame1.height*1.5, width: frame1.width*6, height: frame1.height*8)
+            print("new ",new)
+            let context = CIContext(options: nil)
+            let cgImage = context.createCGImage(ciiImage, from: ciiImage.extent)
+            let uiImage = UIImage.init(cgImage: cgImage!)
+            print(uiImage.size)
+
+
+//                    let crop2 = cropImage(imageToCrop: uiImage, toRect: new)
+            if let imgData = UIImageJPEGRepresentation(uiImage,1) {
+                self.apiDetect(options: imgData, success: { (account) in
+                    print("hang1 ", account)
+                    self.account = account
+                    self.textFace1.string = account.name
+                    self.textFace1.frame = CGRect(x: frame1.origin.x, y: frame1.origin.y - 50, width: 200, height: 50)
+                    self.detectButton.title = "Detect"
+                }) { (err) in
+                    // Ignore err
+                    print(err)
+                }
+            }
+        } else {
+            
+        }
+        
+        
+    }
+    @IBAction func openMenu(_ sender: Any) {
+        if (menuShowing) {
+            leadingConstraint.constant = -70
+            
+            UIView.animate(withDuration: 0.3, animations: {
+                self.view.layoutIfNeeded()
+            })
+        } else {
+            leadingConstraint.constant = 0
+            self.view.bringSubview(toFront: self.menu)
+            
+            UIView.animate(withDuration: 0.3, animations: {
+                self.view.layoutIfNeeded()
+            })
+            
+        }
+        menuShowing = !menuShowing
+    }
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        //cat
+        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(self.addWhisker))
+        whisker.isUserInteractionEnabled = true
+        whisker.addGestureRecognizer(tapGestureRecognizer)
+        
+        //menu
+        menu.layer.shadowOpacity = 1
+        menu.layer.shadowRadius = 4
         
         captureSession.sessionPreset = AVCaptureSessionPresetHigh
         //        captureSession.sessionPreset = AVCaptureSessionPreset640x480
@@ -52,7 +140,7 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
             //make sure this particular device supports video
             if ((device as AnyObject).hasMediaType(AVMediaTypeVideo)) {
                 //finally check the position and confirm we are got the back camera
-                if (device as AnyObject).position == AVCaptureDevicePosition.back {
+                if (device as AnyObject).position == AVCaptureDevicePosition.front {
                     captureDevice = device as? AVCaptureDevice
                     if captureDevice != nil {
                         beginSession()
@@ -60,6 +148,40 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
                 }
             }
         }
+    }
+    
+    @objc func addWhisker() {
+        whiskerShowing = !whiskerShowing
+        
+//        print(isHasFace1)
+//        if (isHasFace1) {
+//            whiskerLayer?.frame = faceLayer1.frame
+//        }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        captureSession.startRunning()
+        
+        isHasFace1 = false
+        isHasFace2 = false
+        isHasFace3 = false
+        isHasFace4 = false
+        isHasFace5 = false
+        
+        self.resetLayer(layer: faceLayer)
+        self.resetLayer(layer: faceLayer1)
+        self.resetLayer(layer: faceLayer2)
+        self.resetLayer(layer: faceLayer3)
+        self.resetLayer(layer: faceLayer4)
+        self.resetLayer(layer: faceLayer5)
+        
+        self.resetTextLayer(layer: textFace1)
+        self.resetTextLayer(layer: textFace2)
+        self.resetTextLayer(layer: textFace3)
+        self.resetTextLayer(layer: textFace4)
+        self.resetTextLayer(layer: textFace5)
+        
+        whiskerLayer?.frame = CGRect()
     }
     
     func beginSession() {
@@ -76,13 +198,27 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
         preview?.videoGravity = AVLayerVideoGravityResizeAspectFill
         
         // Initialize Face Layer
+        self.setUpLayer(layer: faceLayer)
         self.setUpLayer(layer: faceLayer1)
         self.setUpLayer(layer: faceLayer2)
         self.setUpLayer(layer: faceLayer3)
         self.setUpLayer(layer: faceLayer4)
         self.setUpLayer(layer: faceLayer5)
         
+        self.setUpTextLayer(label: textFace1)
+        self.setUpTextLayer(label: textFace2)
+        self.setUpTextLayer(label: textFace3)
+        self.setUpTextLayer(label: textFace4)
+        self.setUpTextLayer(label: textFace5)
+        
+        
+        whiskerLayer = CALayer()
+        whiskerLayer?.contents = self.whiskerImage?.cgImage
+        preview?.addSublayer(whiskerLayer!)
+        
         cameraView.layer.addSublayer(preview!)
+        
+        
         
         stillImageOutput.outputSettings = [AVVideoCodecKey:AVVideoCodecJPEG]
         if captureSession.canAddOutput(stillImageOutput) {
@@ -110,95 +246,63 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
     func setUpLayer(layer: CALayer) {
         layer.borderColor =  UIColor.green.cgColor
         layer.borderWidth = 2
+
         preview?.addSublayer(layer)
+    }
+    
+    func setUpTextLayer(label: CATextLayer) {
+        label.font = "Helvetica-Bold" as CFTypeRef
+        label.fontSize = 20
+//        label.frame = CGRect(x: 0, y: 0, width: 200, height: 21)
+//        label.string = "Hello"
+        label.alignmentMode = kCAAlignmentCenter
+        label.foregroundColor = UIColor.black.cgColor
+        
+        preview?.addSublayer(label)
     }
     
     func resetLayer(layer: CALayer) {
         layer.frame = CGRect()
     }
     
+    func resetTextLayer(layer: CATextLayer) {
+        layer.string = ""
+    }
+    
     func captureOutput(_ captureOutput: AVCaptureOutput!, didOutputSampleBuffer sampleBuffer: CMSampleBuffer!, from connection: AVCaptureConnection!) {
+//        print(connection.videoOrientation)
         if (connection.isVideoOrientationSupported) {
             connection.videoOrientation = AVCaptureVideoOrientation.portrait
         }
-        
-        updateStickerPosition(sampleBuffer: sampleBuffer)
+        getImage(sampleBuffer: sampleBuffer)
+
     }
     
-    func updateStickerPosition(sampleBuffer: CMSampleBuffer) {
+    func getImage(sampleBuffer: CMSampleBuffer) {
         let pixelBuffer: CVImageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)!
         let sourceImageColor: CIImage = CIImage(cvPixelBuffer: pixelBuffer)
+        ciiImage = sourceImageColor
+
         
-        if (faceLayer1.frame.width != 0 ) {
-            let context = CIContext(options: nil)
-            let cgImage = context.createCGImage(sourceImageColor, from: sourceImageColor.extent)
-            let uiImage = UIImage.init(cgImage: cgImage!)
+        if (isHasFace1) {
             
+//            let crop = sourceImageColor.cropping(to: faceLayer1.frame)
             
-            if let imgData = UIImageJPEGRepresentation(uiImage,1) {
-                
-                Alamofire.upload(multipartFormData: {multipartFormData in
-                    multipartFormData.append(imgData, withName: "upload_image",  fileName: "image.jpg", mimeType: "image/jpg")
-                }
-                    , to: "http://192.168.0.38:8088/hang.php")
-                { (result) in
-                    switch result {
-                    case .success(let upload, _, _):
-                        
-                        upload.uploadProgress(closure: { (Progress) in
-                            print("Upload Progress: \(Progress.fractionCompleted)")
-                        })
-                        
-                        upload.responseJSON { response in
-                            
-                            
-                            DispatchQueue.main.async(execute: {
-                                guard let object = response.result.value else {
-                                    let alert = UIAlertController(title: "Alert", message: response.result.error?.localizedDescription, preferredStyle: UIAlertControllerStyle.alert)
-                                    alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
-                                    self.present(alert, animated: true, completion: nil)
-                                    
-                                    print(response.result.error!)
-                                    return
-                                }
-                                let json = JSON(object)
-                                
-                                let alert = UIAlertController(title: "", message: json["result"].string, preferredStyle: UIAlertControllerStyle.alert)
-                                alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
-                                self.present(alert, animated: true, completion: nil)
-                                
-                                
-                                
-                                let string = json["result"].string
-                                //                            let utterance = AVSpeechUtterance(string: string!)
-                                //                            utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-                                //
-                                //                            let synth = AVSpeechSynthesizer()
-                                //                            synth.speak(utterance)
-                                
-                                print(json)
-                                
-                            })
-                            
-                            
-                        }
-                        
-                    case .failure(let encodingError):
-                        //self.delegate?.showFailAlert()
-                        print(encodingError)
-                    }
-                    
-                }
-                
-            }
+//            var image = UIImage.init(ciImage: crop)
+//            let context = CIContext(options: nil)
+//            let cgImage = context.createCGImage(crop, from: crop.extent)
+//            let uiImage = UIImage.init(cgImage: cgImage!)
+
         }
         
     }
     func cropImage(imageToCrop:UIImage, toRect rect:CGRect) -> UIImage{
         
-        let imageRef:CGImage = imageToCrop.cgImage!.cropping(to: rect)!
-        let cropped:UIImage = UIImage(cgImage:imageRef)
-        return cropped
+        if let imageRef:CGImage = imageToCrop.cgImage!.cropping(to: rect) {
+            let cropped:UIImage = UIImage(cgImage:imageRef)
+            return cropped
+        }
+        return UIImage()
     }
 
     
@@ -207,109 +311,295 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
         CATransaction.begin()
         CATransaction.setValue(kCFBooleanTrue, forKey: kCATransactionDisableActions)
 
-//        var faces = [CGRect]()
-//        self.preview?.sublayers?.forEach { $0.removeFromSuperlayer() }
-//        self.preview = AVCaptureVideoPreviewLayer(session: captureSession)
-
-
         // Check if the metadataObjects array is not nil and it contains at least one object.
         if metadataObjects == nil || metadataObjects.count == 0 {
             DispatchQueue.main.sync {
-//                faceLayer?.frame = CGRect()
+                isHasFace1 = false
+                isHasFace2 = false
+                isHasFace3 = false
+                isHasFace4 = false
+                isHasFace5 = false
+                
+                self.account = AccountModel()
+                
+                self.resetLayer(layer: faceLayer)
                 self.resetLayer(layer: faceLayer1)
                 self.resetLayer(layer: faceLayer2)
                 self.resetLayer(layer: faceLayer3)
                 self.resetLayer(layer: faceLayer4)
                 self.resetLayer(layer: faceLayer5)
-                faceArr = []
+                
+                self.resetTextLayer(layer: textFace1)
+                self.resetTextLayer(layer: textFace2)
+                self.resetTextLayer(layer: textFace3)
+                self.resetTextLayer(layer: textFace4)
+                self.resetTextLayer(layer: textFace5)
+                
+                whiskerLayer?.frame = CGRect()
+                
+                
                 print("No face is detected")
                 CATransaction.commit()
                 return
             }
 
         }
-        print(metadataObjects)
+        
+        var faces = [CGRect]()
         var i = 1
         for metadataObject in metadataObjects as! [AVMetadataFaceObject] {
 //            print(metadataObject)
             if metadataObject.type == AVMetadataObjectTypeFace {
                 let transformedMetadataObject = preview?.transformedMetadataObject(for: metadataObject)
-//                if faceID != metadataObject.faceID {
-//                    print(faceID)
-//                    DispatchQueue.main.sync {
-//                    let face = CALayer()
-//                    face.borderColor =  UIColor.green.cgColor
-//                    face.borderWidth = 2
-//
-////                    preview?.addSublayer(faceLayer!)
-//                    face.frame = (transformedMetadataObject?.bounds)!
-////                    faceArr?.append(face)
-//                    preview?.addSublayer(face)
-//                    }
-
-//                    let face = (transformedMetadataObject?.bounds)!
-//                    faces.append(face)
-//                     faceID = metadataObject.faceID
-//                }
-
+                let face = transformedMetadataObject?.bounds
+                faces.append(face!)
+                
                 DispatchQueue.main.sync {
-                    switch i {
-                    case 1 :
-                        faceLayer1.frame = (transformedMetadataObject?.bounds)!
-                        break
-                    case 2 :
-                        faceLayer2.frame = (transformedMetadataObject?.bounds)!
-                        break
-                    case 3 :
-                        faceLayer3.frame = (transformedMetadataObject?.bounds)!
-                        break
-                    case 4 :
-                        faceLayer4.frame = (transformedMetadataObject?.bounds)!
-                        break
-                    case 5 :
-                        faceLayer5.frame = (transformedMetadataObject?.bounds)!
-                        break
-                    default : break
-                    }
-                }
-
-
-                if let videoConnection = self.stillImageOutput.connection(withMediaType: AVMediaTypeVideo) {
-
-
-//                    DispatchQueue.main.async {
-//                        self.stillImageOutput.captureStillImageAsynchronously(from: videoConnection, completionHandler: {(imageDataSampleBuffer, error) -> Void in
-//                            if imageDataSampleBuffer != nil {
+//                    switch i {
+//                    case 1 :
+//                        let frame1 = (transformedMetadataObject?.bounds)!.integral
+//
+//                        if (whiskerShowing) {
+//                            print(frame1)
+//                            whiskerLayer?.frame = CGRect(x: frame1.origin.x+frame1.width/3-(frame1.width/8), y: frame1.origin.y+frame1.height/3, width: 0.6*frame1.width, height: 0.4*frame1.height)
+//
+//                            self.resetLayer(layer: faceLayer1)
+//                            self.resetTextLayer(layer: textFace1)
+//
+//                        } else {
+//                            self.resetLayer(layer: whiskerLayer!)
 //
 //
-//                                if let imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(imageDataSampleBuffer) {
 //
-//                                    let img : UIImage = UIImage(data: imageData)!
+//                            if self.compareRect(frame: frame1, frameCompare: faceLayer1.frame){
+//                                isHasFace1 = false
+//                                print("hang")
+//                            } else {
+//                                isHasFace1 = true
 //
-//                                    print(img)
+//                                self.account = AccountModel()
 //
-//                                }
+//                                self.resetTextLayer(layer: textFace1)
+//
+//                                faceLayer1.frame = frame1
+//
 //                            }
-//                        } )
+//                        }
+//                        break
+//                    case 2 :
+//                        let frame2 = (transformedMetadataObject?.bounds)!.integral
+//                        if self.compareRect(frame: frame2, frameCompare: faceLayer2.frame) {
+//                            isHasFace2 = false
+//                        } else {
+//                            isHasFace2 = true
+//                            faceLayer2.frame = frame2
+//                            print("hang2 ",frame2)
+//                        }
+//                        break
+//                    case 3 :
+//                        let frame3 = (transformedMetadataObject?.bounds)!.integral
+//                        if self.compareRect(frame: frame3, frameCompare: faceLayer3.frame) {
+//                            isHasFace3 = false
+//                        } else {
+//                            isHasFace3 = true
+//                            faceLayer3.frame = frame3
+//                            print("hang3 ",frame3)
+//                        }
+//                        break
+//                    case 4 :
+//                        let frame4 = (transformedMetadataObject?.bounds)!.integral
+//                        if self.compareRect(frame: frame4, frameCompare: faceLayer4.frame) {
+//                            isHasFace4 = false
+//                        } else {
+//                            isHasFace4 = true
+//                            faceLayer4.frame = frame4
+//                            print("hang4 ",frame4)
+//                        }
+//                        break
+//                    case 5 :
+//                        let frame5 = (transformedMetadataObject?.bounds)!.integral
+//                        if self.compareRect(frame: frame5, frameCompare: faceLayer5.frame) {
+//                            isHasFace5 = false
+//                        } else {
+//                            isHasFace5 = true
+//                            faceLayer5.frame = frame5
+//                            print("hang5",frame5)
+//                        }
+//                        break
+//                    default : break
 //                    }
                 }
             }
             i = i + 1
         }
+        
 //        print("FACE",faces)
-//
-//        if faces.count > 0 {
-//            self.faceLayer?.isHidden = false
-//            DispatchQueue.main.sync {
-//                self.faceLayer?.frame = self.findMaxFaceRect(faces: faces)
-//
-//            }
-//        } else {
-//            self.faceLayer?.isHidden = true
-//        }
-//
+
+        if faces.count > 0 {
+            self.faceLayer.isHidden = false
+            DispatchQueue.main.sync {
+                self.faceLayer.frame = self.findMaxFaceRect(faces: faces)
+
+            }
+        } else {
+            self.faceLayer.isHidden = true
+        }
+    
+        
+        
         CATransaction.commit()
 
+    }
+    
+    func scaleAndCropImage(image:UIImage, toSize size: CGSize) -> UIImage {
+        // Sanity check; make sure the image isn't already sized.
+        if image.size.equalTo(size) {
+            return image
+        }
+        
+        let widthFactor = size.width / image.size.width
+        let heightFactor = size.height / image.size.height
+        var scaleFactor: CGFloat = 0.0
+        
+        scaleFactor = heightFactor
+        
+        if widthFactor > heightFactor {
+            scaleFactor = widthFactor
+        }
+        
+        var thumbnailOrigin = CGPoint()
+        let scaledWidth  = image.size.width * scaleFactor
+        let scaledHeight = image.size.height * scaleFactor
+        
+        if widthFactor > heightFactor {
+            thumbnailOrigin.y = (size.height - scaledHeight) / 2.0
+        }
+            
+        else if widthFactor < heightFactor {
+            thumbnailOrigin.x = (size.width - scaledWidth) / 2.0
+        }
+        
+        var thumbnailRect = CGRect()
+        thumbnailRect.origin = thumbnailOrigin
+        thumbnailRect.size.width  = scaledWidth
+        thumbnailRect.size.height = scaledHeight
+        
+        UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+        image.draw(in: thumbnailRect)
+        let scaledImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        
+        return scaledImage
+    }
+    
+    private func cropToPreviewLayer(originalImage: UIImage) -> UIImage {
+        let outputRect = preview?.metadataOutputRectOfInterest(for: (preview?.bounds)!)
+        var cgImage = originalImage.cgImage!
+        let width = CGFloat(cgImage.width)
+        let height = CGFloat(cgImage.height)
+        let cropRect = CGRect(x: (outputRect?.origin.x)! * width, y: (outputRect?.origin.y)! * height, width: (outputRect?.size.width)! * width, height: (outputRect?.size.height)! * height)
+        
+        cgImage = cgImage.cropping(to: cropRect)!
+        let croppedUIImage = UIImage(cgImage: cgImage, scale: 1.0, orientation: originalImage.imageOrientation)
+        
+        return croppedUIImage
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if let touch = touches.first {
+            let p: CGPoint? = touch.location(in: cameraView)
+            if (faceLayer1.contains(cameraView.layer.convert(p ?? CGPoint.zero, to: faceLayer1))) {
+                print("nhi")
+                
+                
+                
+//                captureSession.stopRunning()
+//                let detailController = self.storyboard?.instantiateViewController(withIdentifier: "DetailController") as! DetailController
+//                detailController.account = self.account
+//                self.navigationController?.pushViewController(detailController, animated: true)
+
+
+            }
+        }
+        super.touchesBegan(touches, with: event)
+        
+        
+//        for touch in touches {
+//
+//            //            let point = touch.location(in: cameraView)
+//            let touchPercent = self.touchPercent(touch: touch)
+//
+//            if let device = captureDevice {
+//                do {
+//                    try device.lockForConfiguration()
+//                    device.focusPointOfInterest = touchPercent
+//                    device.focusMode = AVCaptureFocusMode.autoFocus
+//                    device.exposurePointOfInterest = touchPercent
+//                    device.exposureMode = AVCaptureExposureMode.continuousAutoExposure
+//                    device.unlockForConfiguration()
+//
+//                    //                    device.setFocusModeLockedWithLensPosition(0.5, completionHandler: { (timestamp:CMTime) -> Void in
+//                    //                    // timestamp of the first image buffer with the applied lens positio
+//                    //                    })
+//
+//                } catch let err {
+//                    print(err)
+//                }
+//            }
+//
+//        }
+    }
+    
+    func focusTo(value: Float) {
+        if let device = captureDevice {
+            do {
+                try device.lockForConfiguration()
+                device.setFocusModeLockedWithLensPosition(value, completionHandler: { (time) -> Void in
+                    //
+                })
+                device.unlockForConfiguration()
+            } catch let err {
+                print(err)
+            }
+        }
+    }
+    
+    func touchPercent(touch : UITouch) -> CGPoint {
+        // Get the dimensions of the screen in points
+        let screenSize = UIScreen.main.bounds.size
+        
+        // Create an empty CGPoint object set to 0, 0
+        var touchPer = CGPoint()
+        
+        // Set the x and y values to be the value of the tapped position, divided by the width/height of the screen
+        touchPer.x = touch.location(in: self.view).x / screenSize.width
+        touchPer.y = touch.location(in: self.view).y / screenSize.height
+        
+        // Return the populated CGPoint
+        return touchPer
+    }
+
+
+    
+    
+    func compareRect(frame: CGRect, frameCompare: CGRect) -> Bool {
+        let x = frame.origin.x
+        let y = frame.origin.y
+        let width = frame.width
+        let height = frame.height
+        
+        let xC = frameCompare.origin.x
+        let yC = frameCompare.origin.y
+        let widthC = frameCompare.width
+        let heightC = frameCompare.height
+        
+        let numC : CGFloat = 50
+        
+        if (((x - numC) <= xC ) && (xC <= (x + numC))) && (((y - numC) <= yC ) && (yC <= (y + numC))) && (((width - numC) <= widthC ) && (widthC <= (width + numC))) && (((height - numC) <= heightC ) && (heightC <= (height + numC))) {
+            return true
+        }
+        
+        return false
     }
     
     func findMaxFaceRect(faces : Array<CGRect>) -> CGRect {
@@ -332,23 +622,87 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
         if let device = captureDevice {
             do {
                 try device.lockForConfiguration()
-                //                device.focusMode = .locked
+//                                device.focusMode = .locked
                 if device.isFocusModeSupported(.continuousAutoFocus) {
                     device.focusMode = .continuousAutoFocus
                 }
-                
+//
                 device.unlockForConfiguration()
+//                if device.isFocusModeSupported(.continuousAutoFocus) {
+//                    try! device.lockForConfiguration()
+//                    device.focusMode = .continuousAutoFocus
+//                    device.unlockForConfiguration()
+//                }
             } catch let err {
                 print(err)
             }
         }
+    }
+    
+    override func motionBegan(_ motion: UIEventSubtype, with event: UIEvent?) {
+        print("Device was shaken!")
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
+    
+    func apiUpload(path: String, options: Data, success : @escaping (_ result: JSON) -> Void, error: @escaping (Error) -> Void) {
+        
+        Alamofire.upload(multipartFormData: {multipartFormData in
+                    multipartFormData.append(options, withName: "upload_image",  fileName: "image.jpg", mimeType: "image/jpg")
+                }
+            , to: path)
+        { (result) in
+            
+            switch result {
+            case .success(let upload, _, _):
+                
+                upload.uploadProgress(closure: { (Progress) in
+//                    print("Upload Progress: \(Progress.fractionCompleted)")
+                })
+                
+                upload.responseJSON { response in
+                    print(response)
+                    
+                    guard let object = response.result.value else {
+                        error(response.result.error!)
+                        return
+                    }
+                    let json = JSON(object)
+                    
+                    success(json)
+                    
+                }
+                
+            case .failure(let encodingError):
+                error(encodingError)
+            }
+        }
+    }
+    
+    func apiDetect(options: Data, success : @escaping (_ result: AccountModel) -> Void, error: @escaping (Error) -> Void) {
+        apiUpload(path: "http://192.168.0.73:8088/hang.php", options: options, success: { (resonse) in
+//            success(resonse)
+            print(resonse)
+            
+            
+            let account = AccountModel()
+//            if self.isHasFace1 {
+                account.id = resonse["id"].string ?? ""
+                account.name = resonse["name"].string ?? ""
+                account.avatar = resonse["picture"].string ?? ""
+                account.email = resonse["email"].string ?? ""
+                account.birth = resonse["birthday"].string ?? ""
+//            }
+//            print(account)
+            success(account)
+            
+        }) { (err) in
+            error(err)
+        }
+    }
 
 }
 

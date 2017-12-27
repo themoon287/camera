@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		EB1FBAE41FF230930021CBFF /* AccountModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB1FBAE31FF230930021CBFF /* AccountModel.swift */; };
+		EB1FBAE81FF274FF0021CBFF /* SDWebImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EB1FBAE71FF274FF0021CBFF /* SDWebImage.framework */; };
+		EB9C2FCC1FEB740500A3738B /* Toucan.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EB9C2FCB1FEB740400A3738B /* Toucan.framework */; };
+		EB9C2FD01FEBD7CA00A3738B /* DetailController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB9C2FCF1FEBD7CA00A3738B /* DetailController.swift */; };
 		EB9C34291FD64EAB009AA23D /* FaceDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB9C34281FD64EAB009AA23D /* FaceDetector.swift */; };
 		EBB4DDB41FE3AF6F00623325 /* Alamofire.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EBB4DDB21FE3AF6F00623325 /* Alamofire.framework */; };
 		EBB4DDB51FE3AF6F00623325 /* SwiftyJSON.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EBB4DDB31FE3AF6F00623325 /* SwiftyJSON.framework */; };
@@ -38,6 +42,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		EB1FBAE31FF230930021CBFF /* AccountModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountModel.swift; sourceTree = "<group>"; };
+		EB1FBAE51FF274E90021CBFF /* SDWebImage.framework.dSYM */ = {isa = PBXFileReference; lastKnownFileType = wrapper.dsym; name = SDWebImage.framework.dSYM; path = Carthage/Build/iOS/SDWebImage.framework.dSYM; sourceTree = "<group>"; };
+		EB1FBAE71FF274FF0021CBFF /* SDWebImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDWebImage.framework; path = Carthage/Build/iOS/SDWebImage.framework; sourceTree = "<group>"; };
+		EB9C2FC91FEB73EC00A3738B /* Toucan.framework.dSYM */ = {isa = PBXFileReference; lastKnownFileType = wrapper.dsym; name = Toucan.framework.dSYM; path = Carthage/Build/iOS/Toucan.framework.dSYM; sourceTree = "<group>"; };
+		EB9C2FCB1FEB740400A3738B /* Toucan.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Toucan.framework; path = Carthage/Build/iOS/Toucan.framework; sourceTree = "<group>"; };
+		EB9C2FCF1FEBD7CA00A3738B /* DetailController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailController.swift; sourceTree = "<group>"; };
 		EB9C34281FD64EAB009AA23D /* FaceDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceDetector.swift; sourceTree = "<group>"; };
 		EBB4DDB21FE3AF6F00623325 /* Alamofire.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Alamofire.framework; path = Carthage/Build/iOS/Alamofire.framework; sourceTree = "<group>"; };
 		EBB4DDB31FE3AF6F00623325 /* SwiftyJSON.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftyJSON.framework; path = Carthage/Build/iOS/SwiftyJSON.framework; sourceTree = "<group>"; };
@@ -62,6 +72,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EB1FBAE81FF274FF0021CBFF /* SDWebImage.framework in Frameworks */,
+				EB9C2FCC1FEB740500A3738B /* Toucan.framework in Frameworks */,
 				EBB4DDB41FE3AF6F00623325 /* Alamofire.framework in Frameworks */,
 				EBB4DDB51FE3AF6F00623325 /* SwiftyJSON.framework in Frameworks */,
 			);
@@ -87,6 +99,10 @@
 		EBB4DDB11FE3AF6F00623325 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				EB1FBAE71FF274FF0021CBFF /* SDWebImage.framework */,
+				EB1FBAE51FF274E90021CBFF /* SDWebImage.framework.dSYM */,
+				EB9C2FCB1FEB740400A3738B /* Toucan.framework */,
+				EB9C2FC91FEB73EC00A3738B /* Toucan.framework.dSYM */,
 				EBB4DDB21FE3AF6F00623325 /* Alamofire.framework */,
 				EBB4DDB31FE3AF6F00623325 /* SwiftyJSON.framework */,
 			);
@@ -125,6 +141,8 @@
 				EBF6C6C31FD144380053D979 /* Info.plist */,
 				EB9C34281FD64EAB009AA23D /* FaceDetector.swift */,
 				EBEC3A1F1FE2C7BA00A8FF40 /* Other.swift */,
+				EB9C2FCF1FEBD7CA00A3738B /* DetailController.swift */,
+				EB1FBAE31FF230930021CBFF /* AccountModel.swift */,
 			);
 			path = Camera;
 			sourceTree = "<group>";
@@ -286,6 +304,8 @@
 			inputPaths = (
 				"$(SRCROOT)/Carthage/Build/iOS/Alamofire.framework",
 				"$(SRCROOT)/Carthage/Build/iOS/SwiftyJSON.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/Toucan.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/SDWebImage.framework",
 			);
 			outputPaths = (
 			);
@@ -301,8 +321,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				EBEC3A201FE2C7BA00A8FF40 /* Other.swift in Sources */,
+				EB1FBAE41FF230930021CBFF /* AccountModel.swift in Sources */,
 				EBF6C6BA1FD144380053D979 /* ViewController.swift in Sources */,
 				EB9C34291FD64EAB009AA23D /* FaceDetector.swift in Sources */,
+				EB9C2FD01FEBD7CA00A3738B /* DetailController.swift in Sources */,
 				EBF6C6B81FD144380053D979 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
