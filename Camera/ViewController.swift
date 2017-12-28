@@ -21,6 +21,11 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
     @IBOutlet weak var previewCam: UIImageView!
     @IBOutlet weak var detectButton: UIBarButtonItem!
     
+    @IBOutlet weak var namePre: UILabel!
+    @IBOutlet weak var avatarPre: UIImageView!
+    @IBOutlet weak var bottomConstraint: NSLayoutConstraint!
+    @IBOutlet weak var infor: UIView!
+    
     //create AVCaptureSession
     let captureSession = AVCaptureSession()
     
@@ -66,7 +71,7 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
         }
         
         if (isDetect && faceLayer.frame != CGRect() ) {
-            captureSession.stopRunning()
+//            captureSession.stopRunning()
             detectButton.title = "Loading..."
             let frame1 = faceLayer.frame
             
@@ -83,18 +88,34 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
             if let imgData = UIImageJPEGRepresentation(uiImage,1) {
                 self.apiDetect(options: imgData, success: { (account) in
                     print("hang1 ", account)
-                    if self.isHasFace {
+//                    if self.isHasFace {
                         self.account = account
-                        self.textFace.string = account.name
-                        self.textFace.frame = CGRect(x: frame1.origin.x, y: frame1.origin.y - 50, width: 200, height: 50)
+//                        self.textFace.string = account.name
+//                        self.textFace.frame = CGRect(x: frame1.origin.x, y: frame1.origin.y - 50, width: 200, height: 50)
                         self.detectButton.title = "Detect"
                         self.isDetect = false
                         
-                        sleep(3)
+//                        sleep(3)
                         
-                        self.captureSession.startRunning()
+                        self.namePre.text = account.name
+                        if account.avatar != "" {
+                            self.avatarPre.sd_setImage(with: NSURL(string: account.avatar) as URL?)
+                            self.avatarPre.contentMode = UIViewContentMode.scaleAspectFit
+                        } else {
+                            self.avatarPre.image = UIImage(named: "no_image")
+                        }
+                        
+                        self.bottomConstraint.constant = 0
+                        self.view.bringSubview(toFront: self.infor)
+                        
+                        UIView.animate(withDuration: 0.3, animations: {
+                            self.view.layoutIfNeeded()
+                        })
+                        
+                        
+//                        self.captureSession.startRunning()
 //                        self.restart()
-                    }
+//                    }
                     
                 }) { (err) in
                     // Ignore err
@@ -127,6 +148,11 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
     }
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        //moveToDetail
+        let tapGestureRecognizer2 = UITapGestureRecognizer(target: self, action: #selector(self.moveToDetail))
+        infor.isUserInteractionEnabled = true
+        infor.addGestureRecognizer(tapGestureRecognizer2)
 
         //cat
         let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(self.addWhisker))
@@ -159,11 +185,18 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
     
     @objc func addWhisker() {
         whiskerShowing = !whiskerShowing
-        
-//        print(isHasFace1)
-//        if (isHasFace1) {
-//            whiskerLayer?.frame = faceLayer1.frame
-//        }
+    }
+    
+    @objc func moveToDetail() {
+        if (self.account.id != "") {
+            print("nhi")
+            
+            captureSession.stopRunning()
+            let detailController = self.storyboard?.instantiateViewController(withIdentifier: "DetailController") as! DetailController
+            detailController.account = self.account
+            self.navigationController?.pushViewController(detailController, animated: true)
+  
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -331,8 +364,8 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
                 self.resetLayer(layer: whiskerLayer4)
                 self.resetLayer(layer: whiskerLayer5)
                 
-                self.detectButton.title = "Detect"
-                self.isDetect = false
+//                self.InternetButton.title = "Detect"
+//                self.isDetect = false
                 
                 
                 print("No face is detected")
@@ -403,19 +436,19 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
                 let faceMax = self.findMaxFaceRect(faces: faces)
                 
                 isHasFace = true
-                if self.compareRect(frame: faceMax, frameCompare: faceLayer.frame){
-//                    isHasFace = false
-                    print("hang")
-                } else {
-//                    isHasFace = true
-                    
-                    self.account = AccountModel()
-
-                    self.resetTextLayer(layer: textFace)
-                    
-                    faceLayer.frame = faceMax
-                    
-                }
+                
+                faceLayer.frame = faceMax
+                
+//                if self.compareRect(frame: faceMax, frameCompare: faceLayer.frame){
+////                    isHasFace = false
+//                    print("hang")
+//                } else {
+////                    isHasFace = true
+//
+//                    self.account = AccountModel()
+//
+//                    self.resetTextLayer(layer: textFace)
+//                }
                 
                 
             }
@@ -484,46 +517,44 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if let touch = touches.first {
-            let p: CGPoint? = touch.location(in: cameraView)
-            if (faceLayer.contains(cameraView.layer.convert(p ?? CGPoint.zero, to: faceLayer)) && account.id != "") {
-                print("nhi")
-                
-                captureSession.stopRunning()
-                let detailController = self.storyboard?.instantiateViewController(withIdentifier: "DetailController") as! DetailController
-                detailController.account = self.account
-                self.navigationController?.pushViewController(detailController, animated: true)
-
-
-            }
-        }
-        super.touchesBegan(touches, with: event)
-        
-        
-//        for touch in touches {
+//        if let touch = touches.first {
+//            let p: CGPoint? = touch.location(in: cameraView)
+//            if (faceLayer.contains(cameraView.layer.convert(p ?? CGPoint.zero, to: faceLayer)) && account.id != "") {
+//                print("nhi")
+//                
+//                captureSession.stopRunning()
+//                let detailController = self.storyboard?.instantiateViewController(withIdentifier: "DetailController") as! DetailController
+//                detailController.account = self.account
+//                self.navigationController?.pushViewController(detailController, animated: true)
 //
-//            //            let point = touch.location(in: cameraView)
-//            let touchPercent = self.touchPercent(touch: touch)
 //
-//            if let device = captureDevice {
-//                do {
-//                    try device.lockForConfiguration()
-//                    device.focusPointOfInterest = touchPercent
-//                    device.focusMode = AVCaptureFocusMode.autoFocus
-//                    device.exposurePointOfInterest = touchPercent
-//                    device.exposureMode = AVCaptureExposureMode.continuousAutoExposure
-//                    device.unlockForConfiguration()
-//
-//                    //                    device.setFocusModeLockedWithLensPosition(0.5, completionHandler: { (timestamp:CMTime) -> Void in
-//                    //                    // timestamp of the first image buffer with the applied lens positio
-//                    //                    })
-//
-//                } catch let err {
-//                    print(err)
-//                }
 //            }
-//
 //        }
+//        super.touchesBegan(touches, with: event)
+        
+        
+        for touch in touches {
+
+            //            let point = touch.location(in: cameraView)
+            let touchPercent = self.touchPercent(touch: touch)
+
+            if let device = captureDevice {
+                do {
+                    if (device as AnyObject).position == AVCaptureDevicePosition.back {
+                        try device.lockForConfiguration()
+                        device.focusPointOfInterest = touchPercent
+                        device.focusMode = AVCaptureFocusMode.autoFocus
+                        device.exposurePointOfInterest = touchPercent
+                        device.exposureMode = AVCaptureExposureMode.continuousAutoExposure
+                        device.unlockForConfiguration()
+                    }
+
+                } catch let err {
+                    print(err)
+                }
+            }
+
+        }
     }
     
     func focusTo(value: Float) {
@@ -639,6 +670,17 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
                     }
                     let json = JSON(object)
                     
+                    if let string = json["result"].string {
+                        print(string)
+                        
+                        let alert = UIAlertController(title: "Alert", message: "Low Intertet", preferredStyle: UIAlertControllerStyle.alert)
+                        alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+                        self.present(alert, animated: true, completion: nil)
+                        
+                        self.detectButton.title = "Detect"
+                        self.isDetect = false
+                    }
+                    
                     success(json)
                     
                 }
@@ -650,7 +692,7 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
     }
     
     func apiDetect(options: Data, success : @escaping (_ result: AccountModel) -> Void, error: @escaping (Error) -> Void) {
-        apiUpload(path: "http://192.168.0.73:8088/hang.php", options: options, success: { (resonse) in
+        apiUpload(path: "http://192.168.0.117", options: options, success: { (resonse) in
 //            success(resonse)
             print(resonse)
             
@@ -666,6 +708,12 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
             
         }) { (err) in
             error(err)
+            let alert = UIAlertController(title: "Alert", message: err.localizedDescription, preferredStyle: UIAlertControllerStyle.alert)
+            alert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: nil))
+            self.present(alert, animated: true, completion: nil)
+            
+            self.detectButton.title = "Detect"
+            self.isDetect = false
         }
     }
 
