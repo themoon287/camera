@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		EB1FBAE41FF230930021CBFF /* AccountModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB1FBAE31FF230930021CBFF /* AccountModel.swift */; };
 		EB1FBAE81FF274FF0021CBFF /* SDWebImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EB1FBAE71FF274FF0021CBFF /* SDWebImage.framework */; };
+		EB802AA01FF49455000B9162 /* Gif.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB802A9F1FF49455000B9162 /* Gif.swift */; };
 		EB9C2FCC1FEB740500A3738B /* Toucan.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EB9C2FCB1FEB740400A3738B /* Toucan.framework */; };
 		EB9C2FD01FEBD7CA00A3738B /* DetailController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB9C2FCF1FEBD7CA00A3738B /* DetailController.swift */; };
 		EB9C34291FD64EAB009AA23D /* FaceDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB9C34281FD64EAB009AA23D /* FaceDetector.swift */; };
@@ -45,6 +46,7 @@
 		EB1FBAE31FF230930021CBFF /* AccountModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountModel.swift; sourceTree = "<group>"; };
 		EB1FBAE51FF274E90021CBFF /* SDWebImage.framework.dSYM */ = {isa = PBXFileReference; lastKnownFileType = wrapper.dsym; name = SDWebImage.framework.dSYM; path = Carthage/Build/iOS/SDWebImage.framework.dSYM; sourceTree = "<group>"; };
 		EB1FBAE71FF274FF0021CBFF /* SDWebImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDWebImage.framework; path = Carthage/Build/iOS/SDWebImage.framework; sourceTree = "<group>"; };
+		EB802A9F1FF49455000B9162 /* Gif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Gif.swift; sourceTree = "<group>"; };
 		EB9C2FC91FEB73EC00A3738B /* Toucan.framework.dSYM */ = {isa = PBXFileReference; lastKnownFileType = wrapper.dsym; name = Toucan.framework.dSYM; path = Carthage/Build/iOS/Toucan.framework.dSYM; sourceTree = "<group>"; };
 		EB9C2FCB1FEB740400A3738B /* Toucan.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Toucan.framework; path = Carthage/Build/iOS/Toucan.framework; sourceTree = "<group>"; };
 		EB9C2FCF1FEBD7CA00A3738B /* DetailController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailController.swift; sourceTree = "<group>"; };
@@ -143,6 +145,7 @@
 				EBEC3A1F1FE2C7BA00A8FF40 /* Other.swift */,
 				EB9C2FCF1FEBD7CA00A3738B /* DetailController.swift */,
 				EB1FBAE31FF230930021CBFF /* AccountModel.swift */,
+				EB802A9F1FF49455000B9162 /* Gif.swift */,
 			);
 			path = Camera;
 			sourceTree = "<group>";
@@ -325,6 +328,7 @@
 				EBF6C6BA1FD144380053D979 /* ViewController.swift in Sources */,
 				EB9C34291FD64EAB009AA23D /* FaceDetector.swift in Sources */,
 				EB9C2FD01FEBD7CA00A3738B /* DetailController.swift in Sources */,
+				EB802AA01FF49455000B9162 /* Gif.swift in Sources */,
 				EBF6C6B81FD144380053D979 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

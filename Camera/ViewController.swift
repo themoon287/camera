@@ -32,26 +32,19 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
     var preview : AVCaptureVideoPreviewLayer?
     
     var faceLayer: CALayer = CALayer()
-    var faceLayer1: CALayer = CALayer()
-    var faceLayer2: CALayer = CALayer()
-    var faceLayer3: CALayer = CALayer()
-    var faceLayer4: CALayer = CALayer()
-    var faceLayer5: CALayer = CALayer()
     
-    var textFace1: CATextLayer = CATextLayer()
-    var textFace2: CATextLayer = CATextLayer()
-    var textFace3: CATextLayer = CATextLayer()
-    var textFace4: CATextLayer = CATextLayer()
-    var textFace5: CATextLayer = CATextLayer()
+    var textFace: CATextLayer = CATextLayer()
     
-    var isHasFace1: Bool = false
-    var isHasFace2: Bool = false
-    var isHasFace3: Bool = false
-    var isHasFace4: Bool = false
-    var isHasFace5: Bool = false
+    var isHasFace: Bool = false
     
-    var whiskerLayer : CALayer?
+    var whiskerLayer1 : CALayer = CALayer()
+    var whiskerLayer2 : CALayer = CALayer()
+    var whiskerLayer3 : CALayer = CALayer()
+    var whiskerLayer4 : CALayer = CALayer()
+    var whiskerLayer5 : CALayer = CALayer()
+    
     let whiskerImage: UIImage? = UIImage(named: "whisker")
+    let a: UIImageView = UIImageView()
     
     
     var ciiImage = CIImage()
@@ -68,27 +61,41 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
     var account: AccountModel = AccountModel()
     
     @IBAction func Detect(_ sender: Any) {
-        isDetect = !isDetect
-        if (isDetect && faceLayer1.frame != CGRect() ) {
+        if detectButton.title == "Detect" {
+            isDetect = true
+        }
+        
+        if (isDetect && faceLayer.frame != CGRect() ) {
+            captureSession.stopRunning()
             detectButton.title = "Loading..."
-            let frame1 = faceLayer1.frame
+            let frame1 = faceLayer.frame
+            
+            print(frame1)
 
-            let new = CGRect(x: (frame1.origin.x+frame1.width/2)*2.25+frame1.width*0.25, y: (frame1.origin.y+frame1.height/2)*2.25+frame1.height*1.5, width: frame1.width*6, height: frame1.height*8)
+            let new = CGRect(x: (frame1.origin.x)*2.25, y: (frame1.origin.y)*2.25, width: frame1.width*3, height: frame1.height*3)
             print("new ",new)
             let context = CIContext(options: nil)
             let cgImage = context.createCGImage(ciiImage, from: ciiImage.extent)
             let uiImage = UIImage.init(cgImage: cgImage!)
-            print(uiImage.size)
 
 
 //                    let crop2 = cropImage(imageToCrop: uiImage, toRect: new)
             if let imgData = UIImageJPEGRepresentation(uiImage,1) {
                 self.apiDetect(options: imgData, success: { (account) in
                     print("hang1 ", account)
-                    self.account = account
-                    self.textFace1.string = account.name
-                    self.textFace1.frame = CGRect(x: frame1.origin.x, y: frame1.origin.y - 50, width: 200, height: 50)
-                    self.detectButton.title = "Detect"
+                    if self.isHasFace {
+                        self.account = account
+                        self.textFace.string = account.name
+                        self.textFace.frame = CGRect(x: frame1.origin.x, y: frame1.origin.y - 50, width: 200, height: 50)
+                        self.detectButton.title = "Detect"
+                        self.isDetect = false
+                        
+                        sleep(3)
+                        
+                        self.captureSession.startRunning()
+//                        self.restart()
+                    }
+                    
                 }) { (err) in
                     // Ignore err
                     print(err)
@@ -160,28 +167,24 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
     }
     
     override func viewWillAppear(_ animated: Bool) {
+        self.restart()
+    }
+    
+    func restart() {
         captureSession.startRunning()
         
-        isHasFace1 = false
-        isHasFace2 = false
-        isHasFace3 = false
-        isHasFace4 = false
-        isHasFace5 = false
+        isHasFace = false
         
         self.resetLayer(layer: faceLayer)
-        self.resetLayer(layer: faceLayer1)
-        self.resetLayer(layer: faceLayer2)
-        self.resetLayer(layer: faceLayer3)
-        self.resetLayer(layer: faceLayer4)
-        self.resetLayer(layer: faceLayer5)
         
-        self.resetTextLayer(layer: textFace1)
-        self.resetTextLayer(layer: textFace2)
-        self.resetTextLayer(layer: textFace3)
-        self.resetTextLayer(layer: textFace4)
-        self.resetTextLayer(layer: textFace5)
+        self.resetTextLayer(layer: textFace)
         
-        whiskerLayer?.frame = CGRect()
+        
+        self.resetLayer(layer: whiskerLayer1)
+        self.resetLayer(layer: whiskerLayer2)
+        self.resetLayer(layer: whiskerLayer3)
+        self.resetLayer(layer: whiskerLayer4)
+        self.resetLayer(layer: whiskerLayer5)
     }
     
     func beginSession() {
@@ -199,22 +202,15 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
         
         // Initialize Face Layer
         self.setUpLayer(layer: faceLayer)
-        self.setUpLayer(layer: faceLayer1)
-        self.setUpLayer(layer: faceLayer2)
-        self.setUpLayer(layer: faceLayer3)
-        self.setUpLayer(layer: faceLayer4)
-        self.setUpLayer(layer: faceLayer5)
         
-        self.setUpTextLayer(label: textFace1)
-        self.setUpTextLayer(label: textFace2)
-        self.setUpTextLayer(label: textFace3)
-        self.setUpTextLayer(label: textFace4)
-        self.setUpTextLayer(label: textFace5)
+        self.setUpTextLayer(label: textFace)
         
         
-        whiskerLayer = CALayer()
-        whiskerLayer?.contents = self.whiskerImage?.cgImage
-        preview?.addSublayer(whiskerLayer!)
+        self.setUpCat(whiskerLayer: whiskerLayer1)
+        self.setUpCat(whiskerLayer: whiskerLayer2)
+        self.setUpCat(whiskerLayer: whiskerLayer3)
+        self.setUpCat(whiskerLayer: whiskerLayer4)
+        self.setUpCat(whiskerLayer: whiskerLayer5)
         
         cameraView.layer.addSublayer(preview!)
         
@@ -250,6 +246,11 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
         preview?.addSublayer(layer)
     }
     
+    func setUpCat(whiskerLayer: CALayer) {
+        whiskerLayer.contents = self.whiskerImage?.cgImage
+        preview?.addSublayer(whiskerLayer)
+    }
+    
     func setUpTextLayer(label: CATextLayer) {
         label.font = "Helvetica-Bold" as CFTypeRef
         label.fontSize = 20
@@ -264,6 +265,7 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
     func resetLayer(layer: CALayer) {
         layer.frame = CGRect()
     }
+    
     
     func resetTextLayer(layer: CATextLayer) {
         layer.string = ""
@@ -284,7 +286,7 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
         ciiImage = sourceImageColor
 
         
-        if (isHasFace1) {
+        if (isHasFace) {
             
 //            let crop = sourceImageColor.cropping(to: faceLayer1.frame)
             
@@ -300,6 +302,7 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
         
         if let imageRef:CGImage = imageToCrop.cgImage!.cropping(to: rect) {
             let cropped:UIImage = UIImage(cgImage:imageRef)
+//            CGImageRelease(imageRef)
             return cropped
         }
         return UIImage()
@@ -314,28 +317,22 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
         // Check if the metadataObjects array is not nil and it contains at least one object.
         if metadataObjects == nil || metadataObjects.count == 0 {
             DispatchQueue.main.sync {
-                isHasFace1 = false
-                isHasFace2 = false
-                isHasFace3 = false
-                isHasFace4 = false
-                isHasFace5 = false
+                isHasFace = false
                 
                 self.account = AccountModel()
                 
                 self.resetLayer(layer: faceLayer)
-                self.resetLayer(layer: faceLayer1)
-                self.resetLayer(layer: faceLayer2)
-                self.resetLayer(layer: faceLayer3)
-                self.resetLayer(layer: faceLayer4)
-                self.resetLayer(layer: faceLayer5)
                 
-                self.resetTextLayer(layer: textFace1)
-                self.resetTextLayer(layer: textFace2)
-                self.resetTextLayer(layer: textFace3)
-                self.resetTextLayer(layer: textFace4)
-                self.resetTextLayer(layer: textFace5)
+                self.resetTextLayer(layer: textFace)
                 
-                whiskerLayer?.frame = CGRect()
+                self.resetLayer(layer: whiskerLayer1)
+                self.resetLayer(layer: whiskerLayer2)
+                self.resetLayer(layer: whiskerLayer3)
+                self.resetLayer(layer: whiskerLayer4)
+                self.resetLayer(layer: whiskerLayer5)
+                
+                self.detectButton.title = "Detect"
+                self.isDetect = false
                 
                 
                 print("No face is detected")
@@ -351,84 +348,49 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
 //            print(metadataObject)
             if metadataObject.type == AVMetadataObjectTypeFace {
                 let transformedMetadataObject = preview?.transformedMetadataObject(for: metadataObject)
-                let face = transformedMetadataObject?.bounds
-                faces.append(face!)
+                let face = (transformedMetadataObject?.bounds)!.integral
+                faces.append(face)
                 
-                DispatchQueue.main.sync {
-//                    switch i {
-//                    case 1 :
-//                        let frame1 = (transformedMetadataObject?.bounds)!.integral
-//
-//                        if (whiskerShowing) {
-//                            print(frame1)
-//                            whiskerLayer?.frame = CGRect(x: frame1.origin.x+frame1.width/3-(frame1.width/8), y: frame1.origin.y+frame1.height/3, width: 0.6*frame1.width, height: 0.4*frame1.height)
-//
-//                            self.resetLayer(layer: faceLayer1)
-//                            self.resetTextLayer(layer: textFace1)
-//
-//                        } else {
-//                            self.resetLayer(layer: whiskerLayer!)
-//
-//
-//
-//                            if self.compareRect(frame: frame1, frameCompare: faceLayer1.frame){
-//                                isHasFace1 = false
-//                                print("hang")
-//                            } else {
-//                                isHasFace1 = true
-//
-//                                self.account = AccountModel()
-//
-//                                self.resetTextLayer(layer: textFace1)
-//
-//                                faceLayer1.frame = frame1
-//
-//                            }
-//                        }
-//                        break
-//                    case 2 :
-//                        let frame2 = (transformedMetadataObject?.bounds)!.integral
-//                        if self.compareRect(frame: frame2, frameCompare: faceLayer2.frame) {
-//                            isHasFace2 = false
-//                        } else {
-//                            isHasFace2 = true
-//                            faceLayer2.frame = frame2
-//                            print("hang2 ",frame2)
-//                        }
-//                        break
-//                    case 3 :
-//                        let frame3 = (transformedMetadataObject?.bounds)!.integral
-//                        if self.compareRect(frame: frame3, frameCompare: faceLayer3.frame) {
-//                            isHasFace3 = false
-//                        } else {
-//                            isHasFace3 = true
-//                            faceLayer3.frame = frame3
-//                            print("hang3 ",frame3)
-//                        }
-//                        break
-//                    case 4 :
-//                        let frame4 = (transformedMetadataObject?.bounds)!.integral
-//                        if self.compareRect(frame: frame4, frameCompare: faceLayer4.frame) {
-//                            isHasFace4 = false
-//                        } else {
-//                            isHasFace4 = true
-//                            faceLayer4.frame = frame4
-//                            print("hang4 ",frame4)
-//                        }
-//                        break
-//                    case 5 :
-//                        let frame5 = (transformedMetadataObject?.bounds)!.integral
-//                        if self.compareRect(frame: frame5, frameCompare: faceLayer5.frame) {
-//                            isHasFace5 = false
-//                        } else {
-//                            isHasFace5 = true
-//                            faceLayer5.frame = frame5
-//                            print("hang5",frame5)
-//                        }
-//                        break
-//                    default : break
-//                    }
-                }
+//                DispatchQueue.main.sync {
+                    switch i {
+                    case 1 :
+                        if (whiskerShowing) {
+                            whiskerLayer1.frame = CGRect(x: face.origin.x+face.width/3-(face.width/8), y: face.origin.y+face.height/3, width: 0.6*face.width, height: 0.4*face.height)
+                        } else {
+                            self.resetLayer(layer: whiskerLayer1)
+                        }
+                        break
+                    case 2 :
+                        if (whiskerShowing) {
+                            whiskerLayer2.frame = CGRect(x: face.origin.x+face.width/3-(face.width/8), y: face.origin.y+face.height/3, width: 0.6*face.width, height: 0.4*face.height)
+                        } else {
+                            self.resetLayer(layer: whiskerLayer2)
+                        }
+                        break
+                    case 3 :
+                        if (whiskerShowing) {
+                            whiskerLayer3.frame = CGRect(x: face.origin.x+face.width/3-(face.width/8), y: face.origin.y+face.height/3, width: 0.6*face.width, height: 0.4*face.height)
+                        } else {
+                            self.resetLayer(layer: whiskerLayer3)
+                        }
+                        break
+                    case 4 :
+                        if (whiskerShowing) {
+                            whiskerLayer4.frame = CGRect(x: face.origin.x+face.width/3-(face.width/8), y: face.origin.y+face.height/3, width: 0.6*face.width, height: 0.4*face.height)
+                        } else {
+                            self.resetLayer(layer: whiskerLayer4)
+                        }
+                        break
+                    case 5 :
+                        if (whiskerShowing) {
+                            whiskerLayer5.frame = CGRect(x: face.origin.x+face.width/3-(face.width/8), y: face.origin.y+face.height/3, width: 0.6*face.width, height: 0.4*face.height)
+                        } else {
+                            self.resetLayer(layer: whiskerLayer5)
+                        }
+                        break
+                    default : break
+                    }
+//                }
             }
             i = i + 1
         }
@@ -438,14 +400,30 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
         if faces.count > 0 {
             self.faceLayer.isHidden = false
             DispatchQueue.main.sync {
-                self.faceLayer.frame = self.findMaxFaceRect(faces: faces)
+                let faceMax = self.findMaxFaceRect(faces: faces)
+                
+                isHasFace = true
+                if self.compareRect(frame: faceMax, frameCompare: faceLayer.frame){
+//                    isHasFace = false
+                    print("hang")
+                } else {
+//                    isHasFace = true
+                    
+                    self.account = AccountModel()
 
+                    self.resetTextLayer(layer: textFace)
+                    
+                    faceLayer.frame = faceMax
+                    
+                }
+                
+                
             }
-        } else {
+        }
+        
+        if (whiskerShowing) {
             self.faceLayer.isHidden = true
         }
-    
-        
         
         CATransaction.commit()
 
@@ -508,15 +486,13 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if let touch = touches.first {
             let p: CGPoint? = touch.location(in: cameraView)
-            if (faceLayer1.contains(cameraView.layer.convert(p ?? CGPoint.zero, to: faceLayer1))) {
+            if (faceLayer.contains(cameraView.layer.convert(p ?? CGPoint.zero, to: faceLayer)) && account.id != "") {
                 print("nhi")
                 
-                
-                
-//                captureSession.stopRunning()
-//                let detailController = self.storyboard?.instantiateViewController(withIdentifier: "DetailController") as! DetailController
-//                detailController.account = self.account
-//                self.navigationController?.pushViewController(detailController, animated: true)
+                captureSession.stopRunning()
+                let detailController = self.storyboard?.instantiateViewController(withIdentifier: "DetailController") as! DetailController
+                detailController.account = self.account
+                self.navigationController?.pushViewController(detailController, animated: true)
 
 
             }
@@ -578,9 +554,6 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
         // Return the populated CGPoint
         return touchPer
     }
-
-
-    
     
     func compareRect(frame: CGRect, frameCompare: CGRect) -> Bool {
         let x = frame.origin.x
@@ -593,7 +566,7 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
         let widthC = frameCompare.width
         let heightC = frameCompare.height
         
-        let numC : CGFloat = 50
+        let numC : CGFloat = 30
         
         if (((x - numC) <= xC ) && (xC <= (x + numC))) && (((y - numC) <= yC ) && (yC <= (y + numC))) && (((width - numC) <= widthC ) && (widthC <= (width + numC))) && (((height - numC) <= heightC ) && (heightC <= (height + numC))) {
             return true
@@ -622,17 +595,11 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
         if let device = captureDevice {
             do {
                 try device.lockForConfiguration()
-//                                device.focusMode = .locked
                 if device.isFocusModeSupported(.continuousAutoFocus) {
                     device.focusMode = .continuousAutoFocus
                 }
-//
+                
                 device.unlockForConfiguration()
-//                if device.isFocusModeSupported(.continuousAutoFocus) {
-//                    try! device.lockForConfiguration()
-//                    device.focusMode = .continuousAutoFocus
-//                    device.unlockForConfiguration()
-//                }
             } catch let err {
                 print(err)
             }
@@ -660,7 +627,7 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
             case .success(let upload, _, _):
                 
                 upload.uploadProgress(closure: { (Progress) in
-//                    print("Upload Progress: \(Progress.fractionCompleted)")
+                    print("Upload Progress: \(Progress.fractionCompleted)")
                 })
                 
                 upload.responseJSON { response in
@@ -689,14 +656,12 @@ class ViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, 
             
             
             let account = AccountModel()
-//            if self.isHasFace1 {
                 account.id = resonse["id"].string ?? ""
                 account.name = resonse["name"].string ?? ""
                 account.avatar = resonse["picture"].string ?? ""
                 account.email = resonse["email"].string ?? ""
                 account.birth = resonse["birthday"].string ?? ""
-//            }
-//            print(account)
+
             success(account)
             
         }) { (err) in
